@@ -1,0 +1,28 @@
+{
+  "name": "keepa-extension",
+  "version": "1.0.0",
+  "description": "Digikala Price Tracker Chrome Extension",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "date-fns": "^3.0.0",
+    "moment-jalaali": "^0.10.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.13.3"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.25",
+    "@types/chrome": "^0.0.277",
+    "@types/moment-jalaali": "^0.7.9",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
+  }
+}

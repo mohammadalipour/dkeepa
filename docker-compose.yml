@@ -1,0 +1,94 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: keepa-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DB_HOST=timescaledb
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=keepa
+      - REDIS_ADDR=redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - timescaledb
+      - redis
+      - rabbitmq
+    networks:
+      - keepa-network
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: keepa-worker
+    environment:
+      - DB_HOST=timescaledb
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=keepa
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - timescaledb
+      - rabbitmq
+    networks:
+      - keepa-network
+    restart: unless-stopped
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: keepa-timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=keepa
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./migrations/001_init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - keepa-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: keepa-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - keepa-network
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    container_name: keepa-rabbitmq
+    ports:
+      - "5672:5672" # AMQP protocol port
+      - "15672:15672" # Management UI port
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - keepa-network
+    restart: unless-stopped
+
+networks:
+  keepa-network:
+    driver: bridge
+
+volumes:
+  timescaledb_data:
+  redis_data:
+  rabbitmq_data:

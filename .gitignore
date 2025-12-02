@@ -1,0 +1,40 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+/server
+/worker
+/test-scraper
+
+# Go
+*.test
+*.out
+vendor/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Node modules (extension)
+extension/node_modules/
+extension/dist/
+extension/.vite/
+
+# Database
+*.db
+data/
