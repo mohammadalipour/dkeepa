@@ -18,7 +18,18 @@ Complete price tracking system for Digikala products with microservices architec
 - Node.js 20+ (for extension development)
 - Go 1.24+ (for local development)
 
-### Start Backend Services
+### 1. Configure Environment
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit with your credentials (optional for dev)
+nano .env
+```
+
+📖 See [Environment Configuration Guide](docs/ENVIRONMENT_CONFIG.md) for details.
+
+### 2. Start Backend Services
 ```bash
 # Start all services
 make up

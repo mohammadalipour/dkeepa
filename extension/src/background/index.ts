@@ -33,7 +33,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 // Fetch price history from backend API
 async function fetchPriceHistory(dkpId: string, variantId?: string | null) {
-    const API_URL = 'http://localhost:8080';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
     let url = `${API_URL}/api/v1/products/${dkpId}/history`;
 
     if (variantId) {
