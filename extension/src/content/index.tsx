@@ -1,7 +1,6 @@
 import ReactDOM from 'react-dom/client';
 import PriceChart from './PriceChart';
 import ShadowRoot from './ShadowRoot';
-import { scrapeProductData } from './digikalaScraper';
 
 console.log('Keepa content script loaded');
 
@@ -57,34 +56,6 @@ function injectPriceChart(dkpId: string, variantId: string | null) {
     );
 }
 
-// Scrape and send product data to backend
-async function scrapeAndSendData(dkpId: string, variantId: string | null) {
-    try {
-        console.log('Scraping product data...');
-        const productData = await scrapeProductData(dkpId, variantId);
-
-        if (productData) {
-            console.log('Product data scraped:', productData);
-            
-            // Send to background script to forward to backend
-            chrome.runtime.sendMessage({
-                type: 'SEND_PRODUCT_DATA',
-                data: productData
-            }, (response) => {
-                if (response?.success) {
-                    console.log('✅ Product data sent to backend successfully');
-                } else {
-                    console.warn('⚠️ Failed to send to backend:', response?.error);
-                }
-            });
-        } else {
-            console.warn('Could not scrape product data');
-        }
-    } catch (error) {
-        console.error('Error scraping data:', error);
-    }
-}
-
 // Initialize the extension
 function init() {
     const dkpId = getProductId();
@@ -97,14 +68,9 @@ function init() {
     const variantId = getVariantId();
     console.log('Product ID:', dkpId, 'Variant ID:', variantId);
 
-    // Wait a bit for the page to load, then scrape and send data
+    // Wait a bit for the page to load, then inject price chart
     setTimeout(() => {
         injectPriceChart(dkpId, variantId);
-        
-        // Scrape and send product data to backend (wait a bit more for page to fully load)
-        setTimeout(() => {
-            scrapeAndSendData(dkpId, variantId);
-        }, 2000);
     }, 1000);
 }
 
