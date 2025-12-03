@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
 	"github.com/mohammadalipour/keepa/internal/adapters/scraper"
 	"github.com/mohammadalipour/keepa/internal/core/domain"
 )
@@ -24,10 +24,10 @@ type DigikalaSearchResponse struct {
 	Status int `json:"status"`
 	Data   struct {
 		Products []struct {
-			ID       int    `json:"id"`
-			TitleFa  string `json:"title_fa"`
-			TitleEn  string `json:"title_en"`
-			Status   string `json:"status"`
+			ID      int    `json:"id"`
+			TitleFa string `json:"title_fa"`
+			TitleEn string `json:"title_en"`
+			Status  string `json:"status"`
 		} `json:"products"`
 		Pager struct {
 			CurrentPage int `json:"current_page"`
@@ -165,9 +165,9 @@ func saveProduct(db *sqlx.DB, product *domain.Product) error {
 			last_crawled = EXCLUDED.last_crawled
 	`
 
-	_, err := db.Exec(query, product.DkpID, product.Title, product.IsActive, 
+	_, err := db.Exec(query, product.DkpID, product.Title, product.IsActive,
 		product.Category, product.CrawlPriority, product.IsTracked, product.LastCrawled, time.Now())
-	
+
 	return err
 }
 

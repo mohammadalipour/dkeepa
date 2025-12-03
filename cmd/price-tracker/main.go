@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
 	"github.com/mohammadalipour/keepa/internal/adapters/scraper"
 	"github.com/mohammadalipour/keepa/internal/core/domain"
 )
@@ -20,7 +20,7 @@ type DigikalaProductResponse struct {
 		Product struct {
 			ID       int `json:"id"`
 			Variants []struct {
-				ID    int    `json:"id"`
+				ID    int `json:"id"`
 				Title struct {
 					Persian string `json:"fa"`
 				} `json:"title_fa"`
@@ -84,7 +84,7 @@ func main() {
 	// Track prices for each product
 	for dkpID, productVariants := range variantsByProduct {
 		productCount++
-		log.Printf("[%d/%d] Tracking prices for product %s (%d variants)...", 
+		log.Printf("[%d/%d] Tracking prices for product %s (%d variants)...",
 			productCount, len(variantsByProduct), dkpID, len(productVariants))
 
 		prices, err := fetchProductPrices(client, dkpID)

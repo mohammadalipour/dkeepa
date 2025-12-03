@@ -22,7 +22,7 @@ func (s *PriceService) GetProductHistory(ctx context.Context, dkpID string) (*do
 	if err != nil {
 		return nil, err
 	}
-	return s.transformToColumns(dkpID, logs), nil
+	return s.transformToColumnsWithVariants(dkpID, logs), nil
 }
 
 func (s *PriceService) GetProductHistoryByVariant(ctx context.Context, dkpID, variantID string) (*domain.PriceHistoryResponse, error) {
@@ -30,24 +30,54 @@ func (s *PriceService) GetProductHistoryByVariant(ctx context.Context, dkpID, va
 	if err != nil {
 		return nil, err
 	}
-	return s.transformToColumns(dkpID, logs), nil
+	return s.transformToColumnsWithVariants(dkpID, logs), nil
 }
 
-func (s *PriceService) transformToColumns(dkpID string, logs []domain.PriceLog) *domain.PriceHistoryResponse {
+func (s *PriceService) transformToColumnsWithVariants(dkpID string, logs []domain.PriceLog) *domain.PriceHistoryResponse {
 	response := &domain.PriceHistoryResponse{
-		DkpID:   dkpID,
-		Columns: []string{"time", "price", "seller_id", "is_buy_box"},
-		Data:    make([][]interface{}, 0, len(logs)),
+		DkpID:    dkpID,
+		Columns:  []string{"time", "price", "seller_id", "is_buy_box", "variant_id"},
+		Data:     make([][]interface{}, 0, len(logs)),
+		Variants: make([]domain.VariantPriceSeries, 0),
 	}
 
+	// Group logs by variant
+	variantMap := make(map[string][]domain.PriceLog)
+	
 	for _, log := range logs {
+		// Add to combined data (backward compatibility)
 		row := []interface{}{
 			log.Time.Unix(),
 			log.Price,
 			log.SellerID,
 			log.IsBuyBox,
+			log.VariantID,
 		}
 		response.Data = append(response.Data, row)
+		
+		// Group by variant
+		variantMap[log.VariantID] = append(variantMap[log.VariantID], log)
+	}
+
+	// Create separate series for each variant
+	for variantID, variantLogs := range variantMap {
+		series := domain.VariantPriceSeries{
+			VariantID: variantID,
+			Columns:   []string{"time", "price", "seller_id", "is_buy_box"},
+			Data:      make([][]interface{}, 0, len(variantLogs)),
+		}
+		
+		for _, log := range variantLogs {
+			row := []interface{}{
+				log.Time.Unix(),
+				log.Price,
+				log.SellerID,
+				log.IsBuyBox,
+			}
+			series.Data = append(series.Data, row)
+		}
+		
+		response.Variants = append(response.Variants, series)
 	}
 
 	return response

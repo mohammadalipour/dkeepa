@@ -16,10 +16,17 @@ interface PriceChartProps {
     variantId: string | null;
 }
 
+interface VariantSeries {
+    variant_id: string;
+    columns: string[];
+    data: any[][];
+}
+
 interface PriceData {
     dkp_id: string;
     columns: string[];
     data: any[][];
+    variants?: VariantSeries[];
 }
 
 interface ChartDataPoint {
@@ -28,6 +35,7 @@ interface ChartDataPoint {
     price: number;
     seller_id: string;
     is_buy_box: boolean;
+    variant_id?: string;
 }
 
 const PriceChart: React.FC<PriceChartProps> = ({ dkpId, variantId }) => {
@@ -74,18 +82,43 @@ const PriceChart: React.FC<PriceChartProps> = ({ dkpId, variantId }) => {
             if (response.success) {
                 const data: PriceData = response.data;
 
-                // Transform columnar data to chart format, filtering out invalid timestamps
-                const transformed = data.data
-                    .filter((row) => row[0] > 0) // Filter out invalid timestamps
-                    .map((row) => ({
-                        time: row[0],
-                        date: formatDate(row[0]),
-                        price: row[1],
-                        seller_id: row[2],
-                        is_buy_box: row[3]
-                    }));
+                // If we have variants array (new format), merge all variant data
+                if (data.variants && data.variants.length > 0) {
+                    // Merge all variants into a single timeline with variant_id
+                    const allData: any[] = [];
+                    data.variants.forEach(variant => {
+                        variant.data
+                            .filter((row) => row[0] > 0)
+                            .forEach(row => {
+                                allData.push({
+                                    time: row[0],
+                                    date: formatDate(row[0]),
+                                    price: row[1],
+                                    seller_id: row[2],
+                                    is_buy_box: row[3],
+                                    variant_id: variant.variant_id,
+                                });
+                            });
+                    });
+                    
+                    // Sort by time
+                    allData.sort((a, b) => a.time - b.time);
+                    setChartData(allData);
+                } else {
+                    // Fallback to old format for backward compatibility
+                    const transformed = data.data
+                        .filter((row) => row[0] > 0)
+                        .map((row) => ({
+                            time: row[0],
+                            date: formatDate(row[0]),
+                            price: row[1],
+                            seller_id: row[2],
+                            is_buy_box: row[3],
+                            variant_id: row[4] || 'unknown',
+                        }));
 
-                setChartData(transformed);
+                    setChartData(transformed);
+                }
             } else {
                 setError(response.error || 'Failed to fetch price history');
             }
@@ -120,6 +153,11 @@ const PriceChart: React.FC<PriceChartProps> = ({ dkpId, variantId }) => {
                     <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', fontSize: '14px' }}>
                         {formatTooltipDate(data.time)}
                     </p>
+                    {data.variant_id && (
+                        <p style={{ margin: '4px 0', fontSize: '12px', color: '#9C27B0', fontWeight: 'bold' }}>
+                            🏷️ Variant: {data.variant_id}
+                        </p>
+                    )}
                     <p style={{ margin: '4px 0', color: '#1890ff', fontSize: '13px' }}>
                         قیمت: {formatFullPrice(data.price)} تومان
                     </p>
@@ -228,15 +266,56 @@ const PriceChart: React.FC<PriceChartProps> = ({ dkpId, variantId }) => {
                                 />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Legend />
-                                <Line
-                                    type="monotone"
-                                    dataKey="price"
-                                    stroke="#4CAF50"
-                                    strokeWidth={2}
-                                    dot={{ fill: '#4CAF50', r: 4 }}
-                                    activeDot={{ r: 6 }}
-                                    name="قیمت (تومان)"
-                                />
+                                {(() => {
+                                    // Get unique variant IDs
+                                    const variantIds = Array.from(new Set(chartData.map(d => d.variant_id))).filter(Boolean);
+                                    
+                                    // Color palette for up to 25 variants
+                                    const colors = [
+                                        '#4CAF50', '#2196F3', '#FF5722', '#9C27B0', '#FF9800',
+                                        '#00BCD4', '#E91E63', '#8BC34A', '#FFC107', '#3F51B5',
+                                        '#009688', '#F44336', '#CDDC39', '#673AB7', '#FF6F00',
+                                        '#00897B', '#C2185B', '#7CB342', '#FFA000', '#5E35B1',
+                                        '#00ACC1', '#D32F2F', '#AFB42B', '#512DA8', '#FF8F00'
+                                    ];
+                                    
+                                    // If only one variant or no variant info, show single line
+                                    if (variantIds.length <= 1) {
+                                        return (
+                                            <Line
+                                                type="monotone"
+                                                dataKey="price"
+                                                stroke="#4CAF50"
+                                                strokeWidth={2}
+                                                dot={{ fill: '#4CAF50', r: 4 }}
+                                                activeDot={{ r: 6 }}
+                                                name="قیمت (تومان)"
+                                            />
+                                        );
+                                    }
+                                    
+                                    // Create a line for each variant
+                                    return variantIds.map((variantId, index) => {
+                                        const color = colors[index % colors.length];
+                                        // Filter data for this variant
+                                        const variantData = chartData.filter(d => d.variant_id === variantId);
+                                        
+                                        return (
+                                            <Line
+                                                key={variantId}
+                                                type="monotone"
+                                                dataKey="price"
+                                                data={variantData}
+                                                stroke={color}
+                                                strokeWidth={2}
+                                                dot={{ fill: color, r: 3 }}
+                                                activeDot={{ r: 5 }}
+                                                name={`Variant ${variantId}`}
+                                                connectNulls
+                                            />
+                                        );
+                                    });
+                                })()}
                             </LineChart>
                         </ResponsiveContainer>
                     </div>

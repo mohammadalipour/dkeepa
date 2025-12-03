@@ -12,45 +12,45 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
 	"github.com/mohammadalipour/keepa/internal/adapters/scraper"
 	"github.com/mohammadalipour/keepa/internal/core/domain"
 )
 
 // Configuration
 const (
-	DefaultMaxProducts    = 0     // 0 = unlimited (fetch all)
-	DefaultConcurrency    = 3     // Parallel requests (be careful with rate limiting)
-	DefaultBatchSize      = 50    // Products to save in one batch
-	DefaultDelayMs        = 2000  // Milliseconds between requests
-	DefaultCrawlPriority  = 5     // Default priority for new products
+	DefaultMaxProducts   = 0    // 0 = unlimited (fetch all)
+	DefaultConcurrency   = 3    // Parallel requests (be careful with rate limiting)
+	DefaultBatchSize     = 50   // Products to save in one batch
+	DefaultDelayMs       = 2000 // Milliseconds between requests
+	DefaultCrawlPriority = 5    // Default priority for new products
 )
 
 // Available categories
 var AvailableCategories = map[string]string{
-	"mobile-phone":    "گوشی موبایل",
-	"tablet":          "تبلت",
-	"laptop":          "لپ‌تاپ",
-	"smart-watch":     "ساعت هوشمند",
-	"headphone":       "هدفون",
-	"keyboard-mouse":  "کیبورد و ماوس",
-	"monitor":         "مانیتور",
-	"console-gaming":  "کنسول بازی",
-	"camera":          "دوربین",
-	"speaker":         "اسپیکر",
+	"mobile-phone":   "گوشی موبایل",
+	"tablet":         "تبلت",
+	"laptop":         "لپ‌تاپ",
+	"smart-watch":    "ساعت هوشمند",
+	"headphone":      "هدفون",
+	"keyboard-mouse": "کیبورد و ماوس",
+	"monitor":        "مانیتور",
+	"console-gaming": "کنسول بازی",
+	"camera":         "دوربین",
+	"speaker":        "اسپیکر",
 }
 
 // Command line flags
 var (
-	categorySlug  = flag.String("category", "mobile-phone", "Category slug to crawl")
-	maxProducts   = flag.Int("max", DefaultMaxProducts, "Maximum products to fetch (0 = all)")
-	concurrency   = flag.Int("concurrency", DefaultConcurrency, "Number of parallel requests")
-	batchSize     = flag.Int("batch", DefaultBatchSize, "Batch size for database inserts")
-	delayMs       = flag.Int("delay", DefaultDelayMs, "Delay between requests (ms)")
-	dryRun        = flag.Bool("dry-run", false, "Dry run mode (don't save to database)")
+	categorySlug   = flag.String("category", "mobile-phone", "Category slug to crawl")
+	maxProducts    = flag.Int("max", DefaultMaxProducts, "Maximum products to fetch (0 = all)")
+	concurrency    = flag.Int("concurrency", DefaultConcurrency, "Number of parallel requests")
+	batchSize      = flag.Int("batch", DefaultBatchSize, "Batch size for database inserts")
+	delayMs        = flag.Int("delay", DefaultDelayMs, "Delay between requests (ms)")
+	dryRun         = flag.Bool("dry-run", false, "Dry run mode (don't save to database)")
 	listCategories = flag.Bool("list", false, "List available categories")
-	allCategories = flag.Bool("all", false, "Crawl all available categories")
+	allCategories  = flag.Bool("all", false, "Crawl all available categories")
 )
 
 // Statistics
@@ -76,10 +76,10 @@ type DigikalaSearchResponse struct {
 	Status int `json:"status"`
 	Data   struct {
 		Products []struct {
-			ID       int    `json:"id"`
-			TitleFa  string `json:"title_fa"`
-			TitleEn  string `json:"title_en"`
-			Status   string `json:"status"`
+			ID      int    `json:"id"`
+			TitleFa string `json:"title_fa"`
+			TitleEn string `json:"title_en"`
+			Status  string `json:"status"`
 		} `json:"products"`
 		Pager struct {
 			CurrentPage int `json:"current_page"`
@@ -102,7 +102,7 @@ func main() {
 	}
 
 	log.Println("🚀 High-Performance Category Crawler Started")
-	log.Printf("⚙️  Configuration: max=%d, concurrency=%d, batch=%d, delay=%dms", 
+	log.Printf("⚙️  Configuration: max=%d, concurrency=%d, batch=%d, delay=%dms",
 		*maxProducts, *concurrency, *batchSize, *delayMs)
 
 	// Connect to database
@@ -149,7 +149,7 @@ func main() {
 		if result.Error != nil {
 			log.Printf("❌ Category %s failed: %v", slug, result.Error)
 		} else {
-			log.Printf("✅ Category %s completed: %d products in %s", 
+			log.Printf("✅ Category %s completed: %d products in %s",
 				slug, result.ProductCount, result.Duration)
 		}
 	}
@@ -214,7 +214,7 @@ func crawlCategoryParallel(ctx context.Context, client *scraper.TLSClient, categ
 
 	allProducts := make([]*domain.Product, 0, totalPages*20)
 	productsMu := sync.Mutex{}
-	
+
 	// Add first page products
 	allProducts = append(allProducts, firstPage...)
 	atomic.AddInt64(&stats.TotalProducts, int64(len(firstPage)))
@@ -241,7 +241,7 @@ func crawlCategoryParallel(ctx context.Context, client *scraper.TLSClient, categ
 						productsMu.Lock()
 						currentCount := len(allProducts)
 						productsMu.Unlock()
-						
+
 						if currentCount >= maxProducts {
 							continue
 						}
@@ -350,9 +350,9 @@ func saveProduct(db *sqlx.DB, product *domain.Product) error {
 			last_crawled = EXCLUDED.last_crawled
 	`
 
-	_, err := db.Exec(query, product.DkpID, product.Title, product.IsActive, 
+	_, err := db.Exec(query, product.DkpID, product.Title, product.IsActive,
 		product.Category, product.CrawlPriority, product.IsTracked, product.LastCrawled, time.Now())
-	
+
 	return err
 }
 
@@ -379,7 +379,7 @@ func updateCategoryCrawlTime(db *sqlx.DB, categorySlug string, productCount int)
 
 func printFinalStats(stats *CrawlerStats) {
 	duration := time.Since(stats.StartTime)
-	
+
 	log.Printf("\n" + strings.Repeat("=", 60))
 	log.Println("📊 FINAL STATISTICS")
 	log.Printf(strings.Repeat("=", 60))
@@ -388,10 +388,10 @@ func printFinalStats(stats *CrawlerStats) {
 	log.Printf("💾 Saved Products: %d", stats.SavedProducts)
 	log.Printf("❌ Failed Products: %d", stats.FailedProducts)
 	log.Printf("📄 Total Pages: %d", stats.TotalPages)
-	
+
 	if stats.TotalProducts > 0 {
 		avgTime := duration.Seconds() / float64(stats.TotalProducts)
-		log.Printf("⚡ Average: %.2f products/second (%.3fs per product)", 
+		log.Printf("⚡ Average: %.2f products/second (%.3fs per product)",
 			float64(stats.TotalProducts)/duration.Seconds(), avgTime)
 	}
 
@@ -401,10 +401,10 @@ func printFinalStats(stats *CrawlerStats) {
 		if result.Error != nil {
 			status = "❌"
 		}
-		log.Printf("  %s %s (%s): %d products in %s", 
+		log.Printf("  %s %s (%s): %d products in %s",
 			status, AvailableCategories[slug], slug, result.ProductCount, result.Duration)
 	}
-	
+
 	log.Printf(strings.Repeat("=", 60))
 	log.Println("🎉 Crawler Completed!")
 }

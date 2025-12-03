@@ -55,7 +55,18 @@ type PriceLog struct {
 
 // PriceHistoryResponse represents the optimized columnar response format.
 type PriceHistoryResponse struct {
-	DkpID   string          `json:"dkp_id"`
-	Columns []string        `json:"columns"`
-	Data    [][]interface{} `json:"data"`
+	DkpID    string            `json:"dkp_id"`
+	Columns  []string          `json:"columns"`
+	Data     [][]interface{}   `json:"data"`     // All data combined (backward compatibility)
+	Variants []VariantPriceSeries `json:"variants"` // Separated by variant
+}
+
+// VariantPriceSeries represents price history for a single variant
+type VariantPriceSeries struct {
+	VariantID    string          `json:"variant_id"`
+	VariantTitle string          `json:"variant_title,omitempty"`
+	Color        string          `json:"color,omitempty"`
+	Storage      string          `json:"storage,omitempty"`
+	Columns      []string        `json:"columns"`
+	Data         [][]interface{} `json:"data"`
 }
